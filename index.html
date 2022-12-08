@@ -1,0 +1,50 @@
+<style>
+  body {
+    margin-top: 0;
+    margin-left: 0;
+    margin-bottom: 0;
+  }
+</style>
+
+<script>
+  fetch(
+    "https://www.blagues-api.fr/api/random?disallow=dark&disallow=limit&disallow=dev&disallow=blondes&disallow=beauf",
+    {
+      headers: {
+        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMzE4MDU1MzIyNzk3MzQyNzIwIiwibGltaXQiOjEwMCwia2V5IjoiQnFPb2YzZnM2V1NJY3l6MGMwTHUwVUM3dnBOZW9saWo4RndxdHdLT0N3d3dOSWJZMFoiLCJjcmVhdGVkX2F0IjoiMjAyMi0xMC0xNVQwOToyMToyNiswMDowMCIsImlhdCI6MTY2NTgyNTY4Nn0.Ie6UO8ouX38-NZ11T0vFdwBK8jIiOjMMQLUC1jKD3O0`,
+      },
+    }
+  )
+    .then((response) => response.json())
+
+    .then((data) => {
+      console.log(data);
+
+      document.getElementById("joke").innerHTML = data.joke;
+
+      document.getElementById("answer").innerHTML = data.answer;
+
+      /* Expected output:
+
+  {
+
+    "id": 1,
+
+    "type": "dev",
+
+    "joke": "Un développeur ne descend pas du métro.",
+
+    "answer": "Il libère la RAM..."
+
+  }
+
+  */
+    });
+</script>
+
+<strong
+  ><div id="joke"></div>
+  <br
+/></strong>
+
+<em><div id="answer"></div></em>

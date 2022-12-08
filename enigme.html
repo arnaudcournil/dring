@@ -1,0 +1,69 @@
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
+  integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+  crossorigin="anonymous"
+/>
+
+<strong><p id="question"></p></strong>
+<p id="response"></p>
+<div style="text-align: center">
+  <button
+    id="reponse-button"
+    type="button"
+    class="btn btn-primary"
+    onclick="showResponse()"
+  >
+    Voir la réponse
+  </button>
+</div>
+<style>
+  body {
+    background-color: transparent;
+  }
+</style>
+<script>
+  var responseshown = false;
+  var enigmes = {
+    "Un couple arrive à l'hôtel, ils allument les bougies et se mettent dans le lit. Qu'est-ce qui font ?":
+      "Les bougies",
+    "Toute chose, il dévore. Il ronge le fer, fait disparaître l’acier et réduit les pierres en poussière. Qui est-ce ?":
+      "Le temps",
+    "Quelle est la lettre la plus tranchante ?": "La H",
+    "Quelle lettre peut-on lancer dans tous les sens ?": "Le D",
+    "Qui a deux branches, mais pas de feuilles ?": "Les lunettes",
+    "Qui a deux aiguilles, mais ne pique pas ?": "Une montre",
+    "Quand je mange, je grandis et quand je bois, je meurs. Qui suis-je ?":
+      "Le feu",
+    "Qu'est-ce qui disparaît dès que tu dis son nom ?": "Le silence",
+    "On m’entend, mais on ne me voit pas. Qui suis-je ?": "La voie",
+    "Qu’est ce qui réfléchit sans réfléchir ?": "Un miroir",
+    "Le fabricant n’en veut pas. L’acheteur ne s’en sert pas. Et l’utilisateur ne le voit pas. Que suis-je ?":
+      "Le cercueil",
+  };
+  var enigme =
+    Object.keys(enigmes)[
+      Math.floor(Math.random() * Object.keys(enigmes).length)
+    ];
+  document.getElementById("question").innerHTML = enigme;
+  function showResponse() {
+    if (responseshown) {
+      var newenigme = enigme;
+      while (newenigme == enigme) {
+        newenigme =
+          Object.keys(enigmes)[
+            Math.floor(Math.random() * Object.keys(enigmes).length)
+          ];
+      }
+      enigme = newenigme;
+      document.getElementById("question").innerHTML = enigme;
+      document.getElementById("response").innerHTML = "";
+      document.getElementById("reponse-button").innerHTML = "Voir la réponse";
+      responseshown = false;
+    } else {
+      document.getElementById("response").innerHTML = enigmes[enigme];
+      document.getElementById("reponse-button").innerHTML = "Recommencer";
+      responseshown = true;
+    }
+  }
+</script>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+
+    <link rel="stylesheet" href="style.css" />
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/3.3.1/js/swiper.min.js"
+      type="text/javascript"
+    ></script>
+
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/3.3.1/css/swiper.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <style>
+      html {
+        overflow-x: hidden;
+        overflow-y: hidden;
+        -ms-overflow-style: none;
+        overflow: -moz-scrollbars-none;
+      }
+      body {
+        margin-left: 8px;
+        margin-right: 8px;
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+      img {
+        border-radius: 10px;
+        max-height: 100%;
+        object-fit: scale-down;
+      }
+    </style>
+
+    <!-- Google Analytics -->
+  </head>
+
+  <body>
+    <div style="height: 3px"></div>
+
+    <!--Add buttons to initiate auth sequence and sign out-->
+
+    <button id="authorize_button" onclick="handleAuthClick()">
+      <img src="google_button.png" />
+    </button>
+
+    <pre id="content" style="white-space: pre-wrap"></pre>
+
+    <script type="text/javascript">
+      /* exported gapiLoaded */
+
+      /* exported gisLoaded */
+
+      /* exported handleAuthClick */
+
+      // TODO(developer): Set to client ID and API key from the Developer Console
+
+      const CLIENT_ID =
+        "954726238199-4s2ktp4qtbrlpvoo9nbae66ks4vaea75.apps.googleusercontent.com";
+
+      const API_KEY = "AIzaSyCrx-k_QGxlh8ozo5UamJKg0LRCBM8U6N4";
+
+      // Discovery doc URL for APIs used by the quickstart
+
+      const DISCOVERY_DOC =
+        "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
+
+      // Authorization scopes required by the API; multiple scopes can be
+
+      // included, separated by spaces.
+
+      const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+
+      let tokenClient;
+
+      let gapiInited = false;
+
+      let gisInited = false;
+
+      document.getElementById("authorize_button").style.visibility = "hidden";
+
+      /**
+
+       * Callback after api.js is loaded.
+
+       */
+
+      function gapiLoaded() {
+        gapi.load("client", initializeGapiClient);
+      }
+
+      /**
+
+       * Callback after the API client is loaded. Loads the
+
+       * discovery doc to initialize the API.
+
+       */
+
+      async function initializeGapiClient() {
+        await gapi.client.init({
+          apiKey: API_KEY,
+
+          discoveryDocs: [DISCOVERY_DOC],
+        });
+
+        gapiInited = true;
+
+        await maybeEnableButtons();
+      }
+
+      /**
+
+       * Callback after Google Identity Services are loaded.
+
+       */
+
+      async function gisLoaded() {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+
+          scope: SCOPES,
+
+          callback: "", // defined later
+        });
+
+        gisInited = true;
+
+        await maybeEnableButtons();
+      }
+
+      /**
+
+       * Enables user interaction after all libraries are loaded.
+
+       */
+
+      function getCookie(name) {
+        let matches = document.cookie.match(
+          new RegExp(
+            "(?:^|; )" +
+              name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, "\\$1") +
+              "=([^;]*)"
+          )
+        );
+
+        return matches ? decodeURIComponent(matches[1]) : undefined;
+      }
+
+      async function maybeEnableButtons() {
+        cookie = getCookie("GoogleAuth");
+
+        if (gapiInited && gisInited) {
+          document.getElementById("authorize_button").style.visibility =
+            "visible";
+        }
+        try {
+          if (cookie != undefined && cookie != "") {
+            gapi.auth.setToken({
+              access_token: cookie,
+            });
+
+            document.getElementById("authorize_button").remove();
+
+            await listUpcomingEvents();
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      /**
+
+       *  Sign in the user upon button click.
+
+       */
+      function handleAuthClick() {
+        tokenClient.callback = async (resp) => {
+          console.log(resp);
+
+          if (resp.error !== undefined) {
+            throw resp;
+          }
+
+          document.getElementById("authorize_button").remove();
+
+          await listUpcomingEvents();
+        };
+
+        if (gapi.client.getToken() === null) {
+          // Prompt the user to select a Google Account and ask for consent to share their data
+
+          // when establishing a new session.
+
+          tokenClient.requestAccessToken({ prompt: "consent" });
+
+          // special characters (spaces), need encoding
+        } else {
+          // Skip display of account chooser and consent dialog for an existing session.
+
+          tokenClient.requestAccessToken({ prompt: "" });
+        }
+      }
+
+      /**
+
+       * Print the summary and start datetime/date of the next ten events in
+
+       * the authorized user's calendar. If no events are found an
+
+       * appropriate message is printed.
+
+       */
+      function eventToStr(myObject) {
+        var str = "";
+        for (var key in myObject) {
+          str += key; // logs keys in myObject
+          if (myObject[key]) {
+            str += "<br> : " + myObject[key]; // logs values in myObject
+          } else {
+            for (var keyB in myObject[key]) {
+              str += "<br>  " + keyB + " : "; // logs keys in myObject
+              str += myObject[key][keyB];
+            }
+          }
+        }
+        return str;
+      }
+      async function listUpcomingEvents() {
+        let name = "GoogleAuth";
+
+        let value = gapi.client.getToken().access_token;
+
+        // encodes the cookie as my%20name=John%20Smith
+
+        document.cookie =
+          encodeURIComponent(name) + "=" + encodeURIComponent(value);
+
+        let response;
+
+        try {
+          const request = {
+            calendarId: "primary",
+
+            timeMin: new Date().toISOString(),
+
+            showDeleted: false,
+
+            singleEvents: true,
+
+            maxResults: 10,
+
+            orderBy: "startTime",
+          };
+
+          response = await gapi.client.calendar.events.list(request);
+        } catch (err) {
+          document.getElementById("content").innerText = err.message;
+
+          return;
+        }
+
+        const events = response.result.items;
+
+        if (!events || events.length == 0) {
+          document.getElementById("content").innerText = "No events found.";
+
+          return;
+        }
+
+        function generate_items(str, event) {
+          twoDigits = (n) => (n < 10 ? "0" + n : n);
+
+          date = new Date(
+            event.start.dateTime
+
+              .replace("T", " ")
+
+              .replace(/-/g, "/")
+
+              .substring(0, 19)
+          );
+
+          dateEnd = new Date(
+            event.end.dateTime
+
+              .replace("T", " ")
+
+              .replace(/-/g, "/")
+
+              .substring(0, 19)
+          );
+
+          dateEndHour =
+            dateEnd.getDate() == date.getDate()
+              ? " - " +
+                dateEnd.getHours() +
+                ":" +
+                twoDigits(dateEnd.getMinutes())
+              : "";
+
+          month = [
+            "Janvier",
+
+            "Février",
+
+            "Mars",
+
+            "Avril",
+
+            "Mai",
+
+            "Juin",
+
+            "Juillet",
+
+            "Août",
+
+            "Septembre",
+
+            "Octobre",
+
+            "Novembre",
+
+            "Décembre",
+          ];
+
+          day = [
+            "Lundi",
+
+            "Mardi",
+
+            "Mercredi",
+
+            "Jeudi",
+
+            "Vendredi",
+
+            "Samedi",
+
+            "Dimanche",
+          ];
+
+          document.getElementById("elmt").innerHTML +=
+            '<li class="grid gap-4 md:gap-6 lg:gap-8 items-start grid-cols-cards swiper-slide" id="events-container"><article class="bg-white dark:bg-slate-800 rounded-lg">\r\n          <div class="p-3 shadow bg-' +
+            event.colorId +
+            ' text-indigo-50 uppercase grid place-items-center rounded-t-lg">\r\n            <div class="text-sm">' +
+            month[date.getMonth()] +
+            '<\/div>\r\n            <div class="text-3xl font-bold">' +
+            date.getDate() +
+            '<\/div>\r\n          <\/div>\r\n          <div class="p-4 md:p-6 lg:p-8 grid gap-4 md:gap-6">\r\n            <div class="grid gap-1">\r\n              <p class="text-slate-400 text-sm">' +
+            day[date.getDay() - 1] +
+            ", " +
+            date.getHours() +
+            ":" +
+            twoDigits(date.getMinutes()) +
+            dateEndHour +
+            '<\/p>\r\n              <h2 class="font-bold text-2xl">\r\n' +
+            event.summary +
+            '\r\n              <p class="text-slate-400 text-sm">' +
+            (event.location != undefined
+              ? event.location
+              : "Aucune localisation") +
+            '<\/p>\r\n              <\/h2>\r\n            <\/div>\r\n            <a href="' +
+            event.htmlLink +
+            '" target="_blank" class="bg-' +
+            event.colorId +
+            " rounded-md px-4 py-2 text-blue-50 shadow-2xl shadow-blue-200 dark:shadow-none text-center font-bold hover:shadow-none ring ring-offset-0 ring-" +
+            event.colorId +
+            " focus:outline-none focus:ring-offset-2\">Voir l'évênement<\/a>\r\n          <\/div>\r\n        <\/article>\r\n    <\/section>";
+          console.log(event);
+          return 0;
+        }
+
+        // Flatten to string to display
+
+        events.reduce((str, event) => generate_items(str, event), "");
+
+        var swiper = new Swiper(".swiper-container", {
+          pagination: ".swiper-pagination",
+
+          slidesPerView: "auto",
+
+          paginationClickable: true,
+
+          spaceBetween: 0,
+        });
+      }
+    </script>
+
+    <script
+      async
+      defer
+      src="https://apis.google.com/js/api.js"
+      onload="gapiLoaded()"
+    ></script>
+
+    <script
+      async
+      defer
+      src="https://accounts.google.com/gsi/client"
+      onload="gisLoaded()"
+    ></script>
+
+    <main class="max-w-6xl w-full mx-auto swiper-container">
+      <ul class="swiper-wrapper" id="elmt"></ul>
+
+      <br />
+
+      <div style="height: 10px"></div>
+
+      <div class="swiper-pagination"></div>
+    </main>
+  </body>
+</html>
